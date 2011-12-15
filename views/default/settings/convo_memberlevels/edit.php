@@ -16,7 +16,7 @@
 
 
 $array = array(
-	'background' => '#ffffff',
+	'background' => '#000000',
 //	'complete' => '#ff0000',
 	'bronze' => '#d26439',
 	'silver' => '#969696',
