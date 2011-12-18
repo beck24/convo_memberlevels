@@ -30,77 +30,47 @@ $silver = get_plugin_setting('silver', 'convo_memberlevels') ? get_plugin_settin
 $gold = get_plugin_setting('gold', 'convo_memberlevels') ? get_plugin_setting('gold', 'convo_memberlevels') : '#ccad13';
 $platinum = get_plugin_setting('platinum', 'convo_memberlevels') ? get_plugin_setting('platinum', 'convo_memberlevels') : '#e9ebe9';
 $elite = get_plugin_setting('elite', 'convo_memberlevels') ? get_plugin_setting('elite', 'convo_memberlevels') : '#10c637';
-$complete = get_plugin_setting('complete', 'convo_memberlevels') ? get_plugin_setting('complete', 'convo_memberlevels') : '#ff0000';
+//$complete = get_plugin_setting('complete', 'convo_memberlevels') ? get_plugin_setting('complete', 'convo_memberlevels') : '#ff0000';
+$bronzepoint = get_plugin_setting('silver_limit', 'convo_memberlevels') ? get_plugin_setting('silver_limit', 'convo_memberlevels') : 20;
+$silverpoint = get_plugin_setting('gold_limit', 'convo_memberlevels') ? get_plugin_setting('gold_limit', 'convo_memberlevels') : 40;
+$goldpoint = get_plugin_setting('platinum_limit', 'convo_memberlevels') ? get_plugin_setting('platinum_limit', 'convo_memberlevels') : 60;
+$platinumpoint = get_plugin_setting('elite_limit', 'convo_memberlevels') ? get_plugin_setting('elite_limit', 'convo_memberlevels') : 80;
 
-
-$scorearray = array(
-	"'" . $bronze . "'",
-	"'" . $silver . "'",
-	"'" . $gold . "'",
-	"'" . $platinum . "'",
-	"'" . $elite . "'",
-);
 
 //calculate the membervalues
 $memberpercent = round($memberscore * 20); // creates the memberscore as a %
 
-
-$offset = floor($memberscore);
-$remainder = $memberpercent % 20;
-
-foreach($scorearray as $key => $value){
-	if($key < $offset){
-		unset($scorearray[$key]);
-	}
+//find medal
+if($memberpercent < $bronzepoint){
+	$image = "bronze.png";
+	$complete = $bronze;
+}
+elseif($memberpercent < $silverpoint){
+	$image = "silver.png";
+	$complete = $silver;
+}
+elseif($memberpercent < $goldpoint){
+	$image = "gold.png";
+	$complete = $gold;
+}
+elseif($memberpercent < $platinumpoint){
+	$image = "platinum.png";
+	$complete = $platinum;
+}
+else{
+	$image = "elite.png";
+	$complete = $elite;
 }
 
-$scorearray = array_values($scorearray);
 
-$complete = $scorearray[0];
 
 // so now our $scorearray only has colors left that we haven't fully completed
 $colors = array($complete, "'".$background."'");
 
 $weights = array($memberpercent, (100 - $memberpercent));
 
-// set a parallel array with the weights
-/*
-$weights = array();
-for($i=0; $i<count($colors); $i++){
-	switch($i){
-		case 0:
-			$weights[] = $memberpercent;
-			break;
-		case 1:
-			$weights[] = 20 - $remainder;
-			break;
-		default:
-			$weights[] = 20;
-			break;
-	}
-}
-*/
 
 $membervalues = "var membervalues = [" . implode(",", $weights) . "];";
-
-$membercolors = "[" . implode(",", $colors) . "]";
-
-//find medal
-if($memberpercent < 20){
-	$image = "bronze.png";
-}
-elseif($memberpercent < 40){
-	$image = "silver.png";
-}
-elseif($memberpercent < 60){
-	$image = "gold.png";
-}
-elseif($memberpercent < 80){
-	$image = "platinum.png";
-}
-else{
-	$image = "elite.png";
-}
 
 $medal = "<img src=\"{$vars['url']}mod/convo_memberlevels/graphics/$image\" class=\"convo_memberlevels_medal\">";
 
@@ -114,9 +84,9 @@ $convovalues
 $membervalues
 
 $(document).ready( function(){
-	$('#convo_memberlevels_attendancescore').sparkline(attendance, {type: 'pie', sliceColors: [$complete,'$background'], width: '50px', height: '50px'} );
-	$('#convo_memberlevels_convoscore').sparkline(convovalues, {type: 'pie', sliceColors: [$complete,'$background'], width: '50px', height: '50px'} );
-	$('#convo_memberlevels_memberscore').sparkline(membervalues, {type: 'pie', sliceColors: $membercolors, width: '50px', height: '50px'} );
+	$('#convo_memberlevels_attendancescore').sparkline(attendance, {type: 'pie', sliceColors: ['$complete','$background'], width: '50px', height: '50px'} );
+	$('#convo_memberlevels_convoscore').sparkline(convovalues, {type: 'pie', sliceColors: ['$complete','$background'], width: '50px', height: '50px'} );
+	$('#convo_memberlevels_memberscore').sparkline(membervalues, {type: 'pie', sliceColors: ['$complete','$background'], width: '50px', height: '50px'} );
 	$('#convo_memberlevels_memberscore, #convo_memberlevels_attendancescore, #convo_memberlevels_convoscore').mouseenter( function(){
 		$('.convo_memberlevels_legend').toggle();
 	});
@@ -144,8 +114,8 @@ echo "<div style=\"text-align: center;\">";
 echo "<span id=\"convo_memberlevels_memberscore\">Loading...</span>" . " " . $memberpercent . "% =" . " " . $medal;
 echo "</div>";
 echo "<div class=\"convo_memberlevels_legend\">";
-echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $complete;\"></div>";
-echo elgg_echo('convo_memberlevels:your:score') . "<br>";
+//echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $complete;\"></div>";
+//echo elgg_echo('convo_memberlevels:your:score') . "<br>";
 echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $bronze;\"></div>";
 echo elgg_echo('convo_memberlevels:bronze') . "<br>";
 echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $silver;\"></div>";

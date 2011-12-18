@@ -13,11 +13,24 @@
 	
 	echo elgg_view('input/pulldown', $params) . '<br><br>';
 
+echo "<label>" . elgg_echo('convo_memberlevels:limit:description') . "</label><br>";
+echo elgg_echo('convo_memberlevels:color:bronze') . " > 0<br>";
+echo elgg_echo('convo_memberlevels:color:silver') . " > ";
+echo elgg_view('input/text', array('internalname' => "params[silver_limit]", 'value' => $vars['entity']->silver_limit ? $vars['entity']->silver_limit : 20, 'js' => 'style="width: 40px"')) . "<br>";
 
+echo elgg_echo('convo_memberlevels:color:gold') . " > ";
+echo elgg_view('input/text', array('internalname' => "params[gold_limit]", 'value' => $vars['entity']->gold_limit ? $vars['entity']->gold_limit : 40, 'js' => 'style="width: 40px"')) . "<br>";
+
+echo elgg_echo('convo_memberlevels:color:platinum') . " > ";
+echo elgg_view('input/text', array('internalname' => "params[platinum_limit]", 'value' => $vars['entity']->platinum_limit ? $vars['entity']->platinum_limit : 60, 'js' => 'style="width: 40px"')) . "<br>";
+
+echo elgg_echo('convo_memberlevels:color:elite') . " > ";
+echo elgg_view('input/text', array('internalname' => "params[elite_limit]", 'value' => $vars['entity']->elite_limit ? $vars['entity']->elite_limit : 80, 'js' => 'style="width: 40px"')) . "<br>";
+
+echo "<br><br>";
 
 $array = array(
 	'background' => '#000000',
-//	'complete' => '#ff0000',
 	'bronze' => '#d26439',
 	'silver' => '#969696',
 	'gold' => '#ccad13',

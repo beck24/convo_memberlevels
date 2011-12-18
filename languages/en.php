@@ -14,12 +14,28 @@ $english = array(
 	'convo_memberlevels:color:elite' => "Convo Elite",
 	'convo_memberlevels:elite' => "Convo Elite: >= 80%",
 	'convo_memberlevels:gold' => "Gold: 40-59%",
+    'convo_memberlevels:limit:description' => "Level Limits, set as a percent",
 	'convo_memberlevels:login:frequency' => "Monthly Login Frequency",
+    'convo_memberlevels:lower:limit' => "Lower Limit",
 	'convo_memberlevels:membership:level' => "Member Level",
 	'convo_memberlevels:monthly:stats' => "Monthly Stats",
 	'convo_memberlevels:platinum' => "Platinum: 60-79%",
 	'convo_memberlevels:silver' => "Silver: 20-39%",
 	'convo_memberlevels:your:score' => "Your Convo Level",
+
+    'profile_manager:members:searchform:filter_memberlevels' => "Filter by Member Level",
 );
 					
 add_translation("en",$english);
+
+
+
+
+
+
+
+
+
+
+
+

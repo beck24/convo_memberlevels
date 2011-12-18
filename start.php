@@ -23,10 +23,13 @@ function convo_memberlevels_init(){
 	// set the sync function to run every hour for users that have been active within the last hour
 	register_plugin_hook('cron', 'hourly', 'convo_memberlevels_cron');
 	
+	register_plugin_hook('extend_join', 'profile_manager_member_search', 'convo_memberlevels_search_join');
+	register_plugin_hook('extend_where', 'profile_manager_member_search', 'convo_memberlevels_search_where');
+	
 	
 	if(isloggedin()){
 		// now we know for sure every day they were online, not just on login
-		convo_memberlevels_record_online($user);
+		convo_memberlevels_record_online(get_loggedin_user());
 	}
 }
 

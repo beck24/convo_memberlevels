@@ -29,7 +29,7 @@ function convo_memberlevels_calculate_level($user, $month = NULL, $day = NULL, $
 	$loginbonusfield = 'convo_memberlevels-loginbonus-' . $month . '-' . $year; // numerical bonus 0-1
 	$loginscorefield = 'convo_memberlevels-loginscore-' . $month . '-' . $year; // % of days logged in
 	$convoscorefield = 'convo_memberlevels-convoscore-' . $month . '-' . $year; // avg convo rating 0-5
-	$memberscorefield = 'convo_memberlevels-memberscore-' . $month . '-' . $year; // monthly score, 0-6
+	$memberscorefield = 'convo_memberlevels-memberscore-' . $month . '-' . $year; // monthly score, 0-5
 	$calculatedfield = 'convo_memberlevels-calculated-' . $month . '-' . $day . '-' . $year; // flag to find out if this was calculated for this user
 	
 	$nextmonth = ($month == 12) ? 1 : $month + 1;
@@ -217,3 +217,79 @@ function convo_memberlevels_record_online($user){
 	$history[$day] = 1;
 	$user->$field = serialize($history);
 }
+
+
+function convo_memberlevels_search_join($hook_name, $entity_type, $return_value, $parameters){
+  global $CONFIG;
+  
+  $levelfilter = get_input('convo_memberlevels');
+  
+  if($levelfilter){
+    $parameters .= " JOIN {$CONFIG->dbprefix}metadata cml_md ON e.guid = cml_md.entity_guid JOIN {$CONFIG->dbprefix}metastrings cml_ms ON cml_ms.id = cml_md.value_id";
+  
+    return $parameters;
+  }
+}
+
+function convo_memberlevels_search_where($hook_name, $entity_type, $return_value, $parameters){
+  $levelfilter = get_input('convo_memberlevels');
+  
+  if($levelfilter){
+    $silver = get_plugin_setting('silver_limit', 'convo_memberlevels') ? get_plugin_setting('silver_limit', 'convo_memberlevels') : 20;
+    $gold = get_plugin_setting('gold_limit', 'convo_memberlevels') ? get_plugin_setting('gold_limit', 'convo_memberlevels') : 40;
+    $platinum = get_plugin_setting('platinum_limit', 'convo_memberlevels') ? get_plugin_setting('platinum_limit', 'convo_memberlevels') : 60;
+    $elite = get_plugin_setting('elite_limit', 'convo_memberlevels') ? get_plugin_setting('elite_limit', 'convo_memberlevels') : 80;
+    
+    $silverlimit = round(($silver / 20), 2);
+    $goldlimit = round(($gold / 20), 2);
+    $platinumlimit = round(($platinum / 20), 2);
+    $elitelimit = round(($elite / 20), 2);
+  
+    switch ($levelfilter) {
+      case elgg_echo('convo_memberlevels:color:bronze'):
+        $lower = 0;
+        $upper = $silverlimit;  
+        break;
+      case elgg_echo('convo_memberlevels:color:silver'):
+        $lower = $silverlimit;
+        $upper = $goldlimit;  
+        break;
+      case elgg_echo('convo_memberlevels:color:gold'):
+        $lower = $goldlimit;
+        $upper = $platinumlimit;  
+        break;
+      case elgg_echo('convo_memberlevels:color:platinum'):
+        $lower = $platinumlimit;
+        $upper = $elitelimit;  
+        break;
+      case elgg_echo('convo_memberlevels:color:elite'):
+        $lower = $elitelimit;
+        $upper = 5;  
+        break;
+      default:
+        $lower = 0;
+        $upper = 5;
+        break;
+    }
+  
+  
+    $name_metastring_id = get_metastring_id('convo_memberlevels-memberscore-' . date("m") . '-' . date("Y"));
+
+    $parameters .= " cml_md.name_id = {$name_metastring_id} AND cml_ms.string BETWEEN {$lower} AND {$upper} AND ";
+    
+    return $parameters;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
