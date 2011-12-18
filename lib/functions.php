@@ -225,9 +225,9 @@ function convo_memberlevels_search_join($hook_name, $entity_type, $return_value,
   $levelfilter = get_input('convo_memberlevels');
   
   if($levelfilter){
-    $parameters .= " JOIN {$CONFIG->dbprefix}metadata cml_md ON e.guid = cml_md.entity_guid JOIN {$CONFIG->dbprefix}metastrings cml_ms ON cml_ms.id = cml_md.value_id";
+    $return_value .= " JOIN {$CONFIG->dbprefix}metadata cml_md ON e.guid = cml_md.entity_guid JOIN {$CONFIG->dbprefix}metastrings cml_ms ON cml_ms.id = cml_md.value_id";
   
-    return $parameters;
+    return $return_value;
   }
 }
 
@@ -248,19 +248,19 @@ function convo_memberlevels_search_where($hook_name, $entity_type, $return_value
     switch ($levelfilter) {
       case elgg_echo('convo_memberlevels:color:bronze'):
         $lower = 0;
-        $upper = $silverlimit;  
+        $upper = $silverlimit - 0.01;  
         break;
       case elgg_echo('convo_memberlevels:color:silver'):
         $lower = $silverlimit;
-        $upper = $goldlimit;  
+        $upper = $goldlimit - 0.01;  
         break;
       case elgg_echo('convo_memberlevels:color:gold'):
         $lower = $goldlimit;
-        $upper = $platinumlimit;  
+        $upper = $platinumlimit - 0.01;  
         break;
       case elgg_echo('convo_memberlevels:color:platinum'):
         $lower = $platinumlimit;
-        $upper = $elitelimit;  
+        $upper = $elitelimit - 0.01;  
         break;
       case elgg_echo('convo_memberlevels:color:elite'):
         $lower = $elitelimit;
@@ -275,9 +275,9 @@ function convo_memberlevels_search_where($hook_name, $entity_type, $return_value
   
     $name_metastring_id = get_metastring_id('convo_memberlevels-memberscore-' . date("m") . '-' . date("Y"));
 
-    $parameters .= " cml_md.name_id = {$name_metastring_id} AND cml_ms.string BETWEEN {$lower} AND {$upper} AND ";
+    $return_value .= " cml_md.name_id = {$name_metastring_id} AND cml_ms.string BETWEEN {$lower} AND {$upper} AND ";
     
-    return $parameters;
+    return $return_value;
   }
 }
 
