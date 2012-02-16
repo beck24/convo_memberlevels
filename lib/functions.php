@@ -77,14 +77,14 @@ function convo_memberlevels_calculate_level($user, $month = NULL, $day = NULL, $
 	
 	$loginscore = round( (count($loginhistory) / $day), 4 ) * 100; // gives % of days logged in
 	
-	$loginbonus = -1;
+	$loginbonus = -2;
 	
 	if($loginscore > 25){
-		$loginbonus += 0.5;	
+		$loginbonus += 1;	
 	}
 	
 	if($loginscore >= 50){
-		$loginbonus += 1;
+		$loginbonus += 1.5;
 	}
 	
 	if($loginscore >= 75){

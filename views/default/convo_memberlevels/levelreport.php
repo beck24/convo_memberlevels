@@ -20,6 +20,29 @@ $loginscore = $vars['entity']->$loginscorefield;
 $convoscore = $vars['entity']->$convoscorefield;
 $memberscore = $vars['entity']->$memberscorefield;
 
+/* http://trac.elgg.org/ticket/4268
+ * 
+ * has manifested itself here at least once
+ * try to identify and mitigate the damage
+ * - will break on the first load attempt but a refresh should fix it
+ * */
+$arraycheck = array(
+  $loginbonusfield => $loginbonus,
+  $loginscorefield => $loginscore,
+  $convoscorefield => $convoscore,
+  $memberscorefield => $memberscore
+);
+
+foreach($arraycheck as $key => $value){  
+  if(is_array($value)){
+    $metadata = get_metadata_byname(page_owner_entity()->guid, $key);
+    for($i=1; $i<count($metadata); $i++){
+      $metadata[$i]->delete();
+    }
+  }
+}
+// END BUGFIX
+
 $attendancevalues = "var attendance = [" . round($loginscore) . "," . (100 - round($loginscore)) . "];";
 $convovalues = "var convovalues = [" . ($convoscore * 100) . "," . (500 - ($convoscore * 100)) . "];";
 
@@ -30,7 +53,6 @@ $silver = get_plugin_setting('silver', 'convo_memberlevels') ? get_plugin_settin
 $gold = get_plugin_setting('gold', 'convo_memberlevels') ? get_plugin_setting('gold', 'convo_memberlevels') : '#ccad13';
 $platinum = get_plugin_setting('platinum', 'convo_memberlevels') ? get_plugin_setting('platinum', 'convo_memberlevels') : '#e9ebe9';
 $elite = get_plugin_setting('elite', 'convo_memberlevels') ? get_plugin_setting('elite', 'convo_memberlevels') : '#10c637';
-//$complete = get_plugin_setting('complete', 'convo_memberlevels') ? get_plugin_setting('complete', 'convo_memberlevels') : '#ff0000';
 $bronzepoint = get_plugin_setting('silver_limit', 'convo_memberlevels') ? get_plugin_setting('silver_limit', 'convo_memberlevels') : 20;
 $silverpoint = get_plugin_setting('gold_limit', 'convo_memberlevels') ? get_plugin_setting('gold_limit', 'convo_memberlevels') : 40;
 $goldpoint = get_plugin_setting('platinum_limit', 'convo_memberlevels') ? get_plugin_setting('platinum_limit', 'convo_memberlevels') : 60;
@@ -44,22 +66,27 @@ $memberpercent = round($memberscore * 20); // creates the memberscore as a %
 if($memberpercent < $bronzepoint){
 	$image = "bronze.png";
 	$complete = $bronze;
+	$level = elgg_echo('convo_memberlevels:color:bronze');
 }
 elseif($memberpercent < $silverpoint){
 	$image = "silver.png";
 	$complete = $silver;
+	$level = elgg_echo('convo_memberlevels:color:silver');
 }
 elseif($memberpercent < $goldpoint){
 	$image = "gold.png";
 	$complete = $gold;
+	$level = elgg_echo('convo_memberlevels:color:gold');
 }
 elseif($memberpercent < $platinumpoint){
 	$image = "platinum.png";
 	$complete = $platinum;
+	$level = elgg_echo('convo_memberlevels:color:platinum');
 }
 else{
 	$image = "elite.png";
 	$complete = $elite;
+	$level = elgg_echo('convo_memberlevels:color:elite');
 }
 
 
@@ -109,13 +136,11 @@ echo "<div class=\"convo_memberlevels_piewrapper\">";
 echo elgg_echo('convo_memberlevels:avg:convo:rating') . "<br>";
 echo "<span id=\"convo_memberlevels_convoscore\">Loading...</span><br>" . " " . $convoscore . "/5";
 echo "</div>";
-echo "<h4>" . elgg_echo('convo_memberlevels:membership:level') . "</h4>";
+echo "<h4>" . sprintf(elgg_echo('convo_memberlevels:membership:level'), $level) . "</h4>";
 echo "<div style=\"text-align: center;\">";
 echo "<span id=\"convo_memberlevels_memberscore\">Loading...</span>" . " " . $memberpercent . "% =" . " " . $medal;
 echo "</div>";
 echo "<div class=\"convo_memberlevels_legend\">";
-//echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $complete;\"></div>";
-//echo elgg_echo('convo_memberlevels:your:score') . "<br>";
 echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $bronze;\"></div>";
 echo elgg_echo('convo_memberlevels:bronze') . "<br>";
 echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $silver;\"></div>";
@@ -131,3 +156,21 @@ echo "</div>";//report
 echo "<br style=\"clear: both;\">";
 
 } // admin or public
+
+/*
+ * Debugging
+
+if(isadminloggedin()){
+    $silverlimit = round(($bronzepoint / 20), 2);
+    $goldlimit = round(($silverpoint / 20), 2);
+    $platinumlimit = round(($goldpoint / 20), 2);
+    $elitelimit = round(($platinumpoint / 20), 2);
+  
+    echo "raw memberscore = {$memberscore}";
+    
+    echo "<br>silver limit = {$silverlimit}";
+    echo "<br>gold limit = {$goldlimit}";
+    echo "<br>platinum limit = {$platinumlimit}";
+    echo "<br>elite limit = {$elitelimit}";
+}
+*/
