@@ -91,12 +91,19 @@ function convo_memberlevels_calculate_level($user, $month = NULL, $day = NULL, $
 		$loginbonus += 0.5;
 	}
 	
+	// token score just for logging in this month
 	$memberscore = $convoscore + $loginbonus;
-	if($memberscore < 0){
-		$memberscore = 0;
+	if($memberscore <= 0){
+		$memberscore = 0.1;
 	}
+	
 	if($memberscore > 5){
 		$memberscore = 5;
+	}
+	
+	// no login history = automatic 0
+	if(count($loginhistory) == 0){
+	  $memberscore = 0;
 	}
 	
 	// now we save the metadata
@@ -244,26 +251,28 @@ function convo_memberlevels_search_where($hook_name, $entity_type, $return_value
     $goldlimit = round(($gold / 20), 2);
     $platinumlimit = round(($platinum / 20), 2);
     $elitelimit = round(($elite / 20), 2);
+    
+    $roundmod = 0.025;  // = 0.5% when rounded, so subtract that to include people who get rounded up
   
     switch ($levelfilter) {
       case elgg_echo('convo_memberlevels:color:bronze'):
-        $lower = 0;
-        $upper = $silverlimit - 0.01;  
+        $lower = 0.005;
+        $upper = $silverlimit - $roundmod;  
         break;
       case elgg_echo('convo_memberlevels:color:silver'):
-        $lower = $silverlimit;
-        $upper = $goldlimit - 0.01;  
+        $lower = $silverlimit - $roundmod;
+        $upper = $goldlimit - $roundmod;  
         break;
       case elgg_echo('convo_memberlevels:color:gold'):
-        $lower = $goldlimit;
-        $upper = $platinumlimit - 0.01;  
+        $lower = $goldlimit - $roundmod;
+        $upper = $platinumlimit - $roundmod;  
         break;
       case elgg_echo('convo_memberlevels:color:platinum'):
-        $lower = $platinumlimit;
-        $upper = $elitelimit - 0.01;  
+        $lower = $platinumlimit - $roundmod;
+        $upper = $elitelimit - $roundmod;  
         break;
       case elgg_echo('convo_memberlevels:color:elite'):
-        $lower = $elitelimit;
+        $lower = $elitelimit - $roundmod;
         $upper = 5;  
         break;
       default:

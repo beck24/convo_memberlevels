@@ -136,31 +136,44 @@ echo "<div class=\"convo_memberlevels_piewrapper\">";
 echo elgg_echo('convo_memberlevels:avg:convo:rating') . "<br>";
 echo "<span id=\"convo_memberlevels_convoscore\">Loading...</span><br>" . " " . $convoscore . "/5";
 echo "</div>";
-echo "<h4>" . sprintf(elgg_echo('convo_memberlevels:membership:level'), $level) . "</h4>";
+
+if($memberscore > 0){
+  echo "<h4>" . sprintf(elgg_echo('convo_memberlevels:membership:level'), $level) . "</h4>";
+}
+
 echo "<div style=\"text-align: center;\">";
-echo "<span id=\"convo_memberlevels_memberscore\">Loading...</span>" . " " . $memberpercent . "% =" . " " . $medal;
+
+if($memberscore > 0){
+  echo "<span id=\"convo_memberlevels_memberscore\">Loading...</span>" . " " . $memberpercent . "% =" . " " . $medal;
+}
+
 echo "</div>";
-echo "<div class=\"convo_memberlevels_legend\">";
-echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $bronze;\"></div>";
-echo elgg_echo('convo_memberlevels:bronze') . "<br>";
-echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $silver;\"></div>";
-echo elgg_echo('convo_memberlevels:silver') . "<br>";
-echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $gold;\"></div>";
-echo elgg_echo('convo_memberlevels:gold') . "<br>";
-echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $platinum;\"></div>";
-echo elgg_echo('convo_memberlevels:platinum') . "<br>";
-echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $elite;\"></div>";
-echo elgg_echo('convo_memberlevels:elite') . "<br>";
-echo "</div>"; // legend
-echo "</div>";//report
+
+if($memberscore > 0){
+  // only show ranking if they've logged in at least once
+  echo "<div class=\"convo_memberlevels_legend\">";
+  echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $bronze;\"></div>";
+  echo elgg_echo('convo_memberlevels:bronze') . "<br>";
+  echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $silver;\"></div>";
+  echo elgg_echo('convo_memberlevels:silver') . "<br>";
+  echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $gold;\"></div>";
+  echo elgg_echo('convo_memberlevels:gold') . "<br>";
+  echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $platinum;\"></div>";
+  echo elgg_echo('convo_memberlevels:platinum') . "<br>";
+  echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $elite;\"></div>";
+  echo elgg_echo('convo_memberlevels:elite') . "<br>";
+  echo "</div>"; // legend
+  echo "</div>";//report
+}
 echo "<br style=\"clear: both;\">";
 
 } // admin or public
 
 /*
  * Debugging
-
+ */
 if(isadminloggedin()){
+  
     $silverlimit = round(($bronzepoint / 20), 2);
     $goldlimit = round(($silverpoint / 20), 2);
     $platinumlimit = round(($goldpoint / 20), 2);
@@ -172,5 +185,6 @@ if(isadminloggedin()){
     echo "<br>gold limit = {$goldlimit}";
     echo "<br>platinum limit = {$platinumlimit}";
     echo "<br>elite limit = {$elitelimit}";
+    
+ // echo "history = <pre>" . print_r($history,1) . "</pre>";
 }
-*/
