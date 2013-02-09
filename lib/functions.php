@@ -30,7 +30,6 @@ function convo_memberlevels_calculate_level($user, $month = NULL, $day = NULL, $
 	$loginscorefield = 'convo_memberlevels-loginscore-' . $month . '-' . $year; // % of days logged in
 	$convoscorefield = 'convo_memberlevels-convoscore-' . $month . '-' . $year; // avg convo rating 0-5
 	$memberscorefield = 'convo_memberlevels-memberscore-' . $month . '-' . $year; // monthly score, 0-5
-	$calculatedfield = 'convo_memberlevels-calculated-' . $month . '-' . $day . '-' . $year; // flag to find out if this was calculated for this user
 	
 	$nextmonth = ($month == 12) ? 1 : $month + 1;
 	$nextyear = ($nextmonth > 1) ? $year : $year + 1; 
@@ -116,17 +115,8 @@ function convo_memberlevels_calculate_level($user, $month = NULL, $day = NULL, $
 	$user->$loginscorefield = $loginscore;
 	$user->$convoscorefield = $convoscore;
 	$user->$memberscorefield = $memberscore;
-	$user->$calculatedfield = 1;
 	
-	// delete yesterdays calculation flag, because we want to keep the db clean
-	
-	$yesterday = time() - (60*60*24);
-	
-	elgg_delete_metadata(array(
-		'guid' => $user->guid,
-		'metadata_name' => 'convo_memberlevels-calculated-' . date("m", $yesterday) . '-' . date("j", $yesterday) . '-' . date("Y", $yesterday),
-		'limit' => 0
-	));
+	$user->save();
 	
 	elgg_set_ignore_access(FALSE);
 	elgg_set_context($context);
@@ -137,53 +127,19 @@ function convo_memberlevels_calculate_level($user, $month = NULL, $day = NULL, $
 // covered in 24 hours, each hour doing 1/24th of the population
 // @TODO - with 1.8 we can do this once a day and use ElggBatch
 function convo_memberlevels_cron($hook, $type, $returnvalue, $params){
-	$dbprefix = elgg_get_config('dbprefix');
-	$interval = elgg_get_plugin_setting('interval', 'convo_memberlevels');
 	
-	if (!$interval || $interval == 24) {
-		$interval = 0;
-	}
-	
-	$interval++;
-	
-	elgg_set_plugin_setting('interval', $interval, 'convo_memberlevels');
-	
-	$name_metastring_id = add_metastring('convo_memberlevels-calculated-' . date("m") . '-' . date("j") . '-' . date("Y"));
-	
-	$params = array(
+	$options = array(
 		'types' => array('user'),
-		'limit' => 0,
-		'count' => TRUE,
-		'wheres' => array(
-			"NOT EXISTS (
-			SELECT 1 FROM {$dbprefix}metadata md
-			WHERE md.entity_guid = e.guid
-				AND md.name_id = $name_metastring_id)"
-			),
-	);
-
-	$numusers = elgg_get_entities($params);
-	$limit = ceil($numusers / 24);
-
-	$offset = $limit * $interval;
-	
-	$params = array(
-		'types' => array('user'),
-		'limit' => $limit,
-		'offset' => $offset,
-		'wheres' => array(
-			"NOT EXISTS (
-			SELECT 1 FROM {$dbprefix}metadata md
-			WHERE md.entity_guid = e.guid
-				AND md.name_id = $name_metastring_id)"
-			),
+		'limit' => 0
 	);
 	
-	$users = elgg_get_entities($params);
-	
-	foreach ($users as $user) {
-		convo_memberlevels_calculate_level($user);
-	}
+	// process daily
+	$batch = new ElggBatch('elgg_get_entities', $options, 'convo_memberlevels_cron_batch', 25);
+}
+
+
+function convo_memberlevels_cron_batch($result, $getter, $options) {
+  convo_memberlevels_calculate_level($result);
 }
 
 //
@@ -233,6 +189,7 @@ function convo_memberlevels_record_online($user) {
 	
 	$history[$day] = 1;
 	$user->$field = serialize($history);
+	$user->save();
 }
 
 /*

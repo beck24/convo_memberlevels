@@ -1,10 +1,12 @@
 <?php
 
-elgg_register_js('farbtastic');
-elgg_register_css('farbtastic');
-elgg_register_js('sparkline');
+elgg_load_js('farbtastic');
+elgg_load_css('farbtastic');
+elgg_load_js('sparkline');
 
-convo_memberlevels_calculate_level($vars['entity']);
+$user = elgg_get_page_owner_entity();
+
+convo_memberlevels_calculate_level($user);
 
 $access = elgg_get_plugin_setting('access', 'convo_memberlevels');
 
@@ -13,17 +15,17 @@ if ($access == 'public' || elgg_is_admin_logged_in()) {
 $month = date("m");
 $year = date("Y");
 
-//$loginhistoryfield = 'convo_memberlevels-history-' . $month . '-' . $year; // array of login days
+$loginhistoryfield = 'convo_memberlevels-history-' . $month . '-' . $year; // array of login days
 $loginbonusfield = 'convo_memberlevels-loginbonus-' . $month . '-' . $year; // numerical bonus 0-1
 $loginscorefield = 'convo_memberlevels-loginscore-' . $month . '-' . $year; // % of days logged in
 $convoscorefield = 'convo_memberlevels-convoscore-' . $month . '-' . $year; // avg convo rating 0-5
 $memberscorefield = 'convo_memberlevels-memberscore-' . $month . '-' . $year; // monthly score, 0-5
 
-//$history = unserialize($vars['entity']->$loginhistoryfield);
-$loginbonus = $vars['entity']->$loginbonusfield;
-$loginscore = $vars['entity']->$loginscorefield;
-$convoscore = $vars['entity']->$convoscorefield;
-$memberscore = $vars['entity']->$memberscorefield;
+$history = unserialize($user->$loginhistoryfield);
+$loginbonus = $user->$loginbonusfield;
+$loginscore = $user->$loginscorefield;
+$convoscore = $user->$convoscorefield;
+$memberscore = $user->$memberscorefield;
 
 /* http://trac.elgg.org/ticket/4268
  * 
@@ -41,7 +43,7 @@ $arraycheck = array(
 foreach ($arraycheck as $key => $value) {
   if (is_array($value)) {
 	$metadata = elgg_get_metadata(array(
-		'guid' => $vars['entity']->guid,
+		'guid' => $user->guid,
 		'metadata_name' => $key,
 		'limit' => 0
 	));
@@ -131,13 +133,17 @@ $(document).ready( function(){
 	$('#convo_memberlevels_memberscore, #convo_memberlevels_attendancescore, #convo_memberlevels_convoscore').mouseleave( function(){
 		$('.convo_memberlevels_legend').toggle();
 	});
+	
+	// move our block into the owner block
+	$('.convo_memberlevels_report').appendTo('#profile-owner-block');
+	
 });
 </script>
 JS;
 
 echo $js;
 
-echo "<div class=\"convo_memberlevels_report\">";
+echo "<div class=\"convo_memberlevels_report clearfix\">";
 echo "<h4>" . elgg_echo('convo_memberlevels:monthly:stats') . "</h4>";
 echo "<div class=\"convo_memberlevels_piewrapper\">";
 echo elgg_echo('convo_memberlevels:login:frequency') . "<br>";
@@ -176,15 +182,16 @@ if ($memberscore > 0) {
   echo "</div>"; // legend
   echo "</div>";//report
 }
-echo "<br style=\"clear: both;\">";
+
 
 } // admin or public
 
 /*
  * Debugging
  */
+/*
 if (elgg_is_admin_logged_in()) {
-  /*
+  
     $silverlimit = round(($bronzepoint / 20), 2);
     $goldlimit = round(($silverpoint / 20), 2);
     $platinumlimit = round(($goldpoint / 20), 2);
@@ -196,6 +203,7 @@ if (elgg_is_admin_logged_in()) {
     echo "<br>gold limit = {$goldlimit}";
     echo "<br>platinum limit = {$platinumlimit}";
     echo "<br>elite limit = {$elitelimit}";
-  */  
- // echo "history = <pre>" . print_r($history,1) . "</pre>";
+  
+	echo "<br>history = <pre>" . print_r($history,1) . "</pre>";
 }
+*/
