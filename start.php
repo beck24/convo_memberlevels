@@ -3,34 +3,34 @@
 include_once 'lib/functions.php';
 
 function convo_memberlevels_init(){
-	global $CONFIG;
+	elgg_register_js('sparkline', elgg_get_site_url() . 'mod/convo_memberlevels/lib/jquery.sparkline.min.js');
+	elgg_register_js('farbtastic', elgg_get_site_url() . 'mod/convo_memberlevels/lib/farbtastic/farbtastic.js');
+	elgg_register_css('farbtastic', elgg_get_site_url() . 'mod/convo_memberlevels/lib/farbtastic/farbtastic.css');
 	
-	elgg_extend_view('profile/profilelinks', 'convo_memberlevels/levelreport', 0);
-	elgg_extend_view('metatags', 'convo_memberlevels/metatags');
-	elgg_extend_view('css', 'convo_memberlevels/css');
+	elgg_extend_view('profile/owner_block', 'convo_memberlevels/levelreport');
+	elgg_extend_view('css/elgg', 'convo_memberlevels/css');
+	elgg_extend_view('css/admin', 'convo_memberlevels/css');
 	
-	// Load the language file
-	register_translations($CONFIG->pluginspath . "convo_memberlevels/languages/");
+	elgg_register_page_handler('convo_memberlevels','convo_memberlevels_page_handler');
 	
-	register_page_handler('convo_memberlevels','convo_memberlevels_page_handler');
-	
-	register_elgg_event_handler('create', 'annotation', 'convo_memberlevels_rated');
-	register_elgg_event_handler('login','user','convo_memberlevels_login');
+	elgg_register_event_handler('create', 'annotation', 'convo_memberlevels_rated');
+	elgg_register_event_handler('login', 'user','convo_memberlevels_login');
 	
 	// override permissions for the access_plus_permissions context
-	register_plugin_hook('permissions_check', 'all', 'convo_memberlevels_permissions_check');
+	elgg_register_plugin_hook_handler('permissions_check', 'all', 'convo_memberlevels_permissions_check');
 	
 	// set the sync function to run every hour for users that have been active within the last hour
-	register_plugin_hook('cron', 'hourly', 'convo_memberlevels_cron');
+	elgg_register_plugin_hook_handler('cron', 'daily', 'convo_memberlevels_cron');
 	
-	register_plugin_hook('extend_join', 'profile_manager_member_search', 'convo_memberlevels_search_join');
-	register_plugin_hook('extend_where', 'profile_manager_member_search', 'convo_memberlevels_search_where');
+	/*  PROFILE MANAGER MEMBER SEARCH REMOVED IN 1.8  */
+	//elgg_register_plugin_hook_handler('extend_join', 'profile_manager_member_search', 'convo_memberlevels_search_join');
+	//elgg_register_plugin_hook_hanlder('extend_where', 'profile_manager_member_search', 'convo_memberlevels_search_where');
 	
 	
-	if(isloggedin()){
+	if(elgg_is_logged_in()){
 		// now we know for sure every day they were online, not just on login
-		convo_memberlevels_record_online(get_loggedin_user());
+		convo_memberlevels_record_online(elgg_get_logged_in_user_entity());
 	}
 }
 
-register_elgg_event_handler('init', 'system', 'convo_memberlevels_init');
+elgg_register_event_handler('init', 'system', 'convo_memberlevels_init');

@@ -1,9 +1,16 @@
 <?php
-convo_memberlevels_calculate_level($vars['entity']);
 
-$access = get_plugin_setting('access', 'convo_memberlevels');
+elgg_load_js('farbtastic');
+elgg_load_css('farbtastic');
+elgg_load_js('sparkline');
 
-if($access == 'public' || isadminloggedin()){
+$user = elgg_get_page_owner_entity();
+
+convo_memberlevels_calculate_level($user);
+
+$access = elgg_get_plugin_setting('access', 'convo_memberlevels');
+
+if ($access == 'public' || elgg_is_admin_logged_in()) {
 
 $month = date("m");
 $year = date("Y");
@@ -14,11 +21,11 @@ $loginscorefield = 'convo_memberlevels-loginscore-' . $month . '-' . $year; // %
 $convoscorefield = 'convo_memberlevels-convoscore-' . $month . '-' . $year; // avg convo rating 0-5
 $memberscorefield = 'convo_memberlevels-memberscore-' . $month . '-' . $year; // monthly score, 0-5
 
-$history = unserialize($vars['entity']->$loginhistoryfield);
-$loginbonus = $vars['entity']->$loginbonusfield;
-$loginscore = $vars['entity']->$loginscorefield;
-$convoscore = $vars['entity']->$convoscorefield;
-$memberscore = $vars['entity']->$memberscorefield;
+$history = unserialize($user->$loginhistoryfield);
+$loginbonus = $user->$loginbonusfield;
+$loginscore = $user->$loginscorefield;
+$convoscore = $user->$convoscorefield;
+$memberscore = $user->$memberscorefield;
 
 /* http://trac.elgg.org/ticket/4268
  * 
@@ -33,10 +40,15 @@ $arraycheck = array(
   $memberscorefield => $memberscore
 );
 
-foreach($arraycheck as $key => $value){  
-  if(is_array($value)){
-    $metadata = get_metadata_byname(page_owner_entity()->guid, $key);
-    for($i=1; $i<count($metadata); $i++){
+foreach ($arraycheck as $key => $value) {
+  if (is_array($value)) {
+	$metadata = elgg_get_metadata(array(
+		'guid' => $user->guid,
+		'metadata_name' => $key,
+		'limit' => 0
+	));
+	
+    for ($i=1; $i<count($metadata); $i++) {
       $metadata[$i]->delete();
     }
   }
@@ -47,16 +59,16 @@ $attendancevalues = "var attendance = [" . round($loginscore) . "," . (100 - rou
 $convovalues = "var convovalues = [" . ($convoscore * 100) . "," . (500 - ($convoscore * 100)) . "];";
 
 
-$background = get_plugin_setting('background', 'convo_memberlevels') ? get_plugin_setting('background', 'convo_memberlevels') : '#ffffff';
-$bronze = get_plugin_setting('bronze', 'convo_memberlevels') ? get_plugin_setting('bronze', 'convo_memberlevels') : '#d26439';
-$silver = get_plugin_setting('silver', 'convo_memberlevels') ? get_plugin_setting('silver', 'convo_memberlevels') : '#969696';
-$gold = get_plugin_setting('gold', 'convo_memberlevels') ? get_plugin_setting('gold', 'convo_memberlevels') : '#ccad13';
-$platinum = get_plugin_setting('platinum', 'convo_memberlevels') ? get_plugin_setting('platinum', 'convo_memberlevels') : '#e9ebe9';
-$elite = get_plugin_setting('elite', 'convo_memberlevels') ? get_plugin_setting('elite', 'convo_memberlevels') : '#10c637';
-$bronzepoint = get_plugin_setting('silver_limit', 'convo_memberlevels') ? get_plugin_setting('silver_limit', 'convo_memberlevels') : 20;
-$silverpoint = get_plugin_setting('gold_limit', 'convo_memberlevels') ? get_plugin_setting('gold_limit', 'convo_memberlevels') : 40;
-$goldpoint = get_plugin_setting('platinum_limit', 'convo_memberlevels') ? get_plugin_setting('platinum_limit', 'convo_memberlevels') : 60;
-$platinumpoint = get_plugin_setting('elite_limit', 'convo_memberlevels') ? get_plugin_setting('elite_limit', 'convo_memberlevels') : 80;
+$background = elgg_get_plugin_setting('background', 'convo_memberlevels') ? elgg_get_plugin_setting('background', 'convo_memberlevels') : '#ffffff';
+$bronze = elgg_get_plugin_setting('bronze', 'convo_memberlevels') ? elgg_get_plugin_setting('bronze', 'convo_memberlevels') : '#d26439';
+$silver = elgg_get_plugin_setting('silver', 'convo_memberlevels') ? elgg_get_plugin_setting('silver', 'convo_memberlevels') : '#969696';
+$gold = elgg_get_plugin_setting('gold', 'convo_memberlevels') ? elgg_get_plugin_setting('gold', 'convo_memberlevels') : '#ccad13';
+$platinum = elgg_get_plugin_setting('platinum', 'convo_memberlevels') ? elgg_get_plugin_setting('platinum', 'convo_memberlevels') : '#e9ebe9';
+$elite = elgg_get_plugin_setting('elite', 'convo_memberlevels') ? elgg_get_plugin_setting('elite', 'convo_memberlevels') : '#10c637';
+$bronzepoint = elgg_get_plugin_setting('silver_limit', 'convo_memberlevels') ? elgg_get_plugin_setting('silver_limit', 'convo_memberlevels') : 20;
+$silverpoint = elgg_get_plugin_setting('gold_limit', 'convo_memberlevels') ? elgg_get_plugin_setting('gold_limit', 'convo_memberlevels') : 40;
+$goldpoint = elgg_get_plugin_setting('platinum_limit', 'convo_memberlevels') ? elgg_get_plugin_setting('platinum_limit', 'convo_memberlevels') : 60;
+$platinumpoint = elgg_get_plugin_setting('elite_limit', 'convo_memberlevels') ? elgg_get_plugin_setting('elite_limit', 'convo_memberlevels') : 80;
 
 
 //calculate the membervalues
@@ -92,14 +104,15 @@ else{
 
 
 // so now our $scorearray only has colors left that we haven't fully completed
-$colors = array($complete, "'".$background."'");
+//$colors = array($complete, "'".$background."'");
 
 $weights = array($memberpercent, (100 - $memberpercent));
 
 
 $membervalues = "var membervalues = [" . implode(",", $weights) . "];";
 
-$medal = "<img src=\"{$vars['url']}mod/convo_memberlevels/graphics/$image\" class=\"convo_memberlevels_medal\">";
+$site_url = elgg_get_site_url();
+$medal = "<img src=\"{$site_url}mod/convo_memberlevels/graphics/$image\" class=\"convo_memberlevels_medal\">";
 
 
 $js = <<<JS
@@ -120,13 +133,17 @@ $(document).ready( function(){
 	$('#convo_memberlevels_memberscore, #convo_memberlevels_attendancescore, #convo_memberlevels_convoscore').mouseleave( function(){
 		$('.convo_memberlevels_legend').toggle();
 	});
+	
+	// move our block into the owner block
+	$('.convo_memberlevels_report').appendTo('#profile-owner-block');
+	
 });
 </script>
 JS;
 
 echo $js;
 
-echo "<div class=\"convo_memberlevels_report\">";
+echo "<div class=\"convo_memberlevels_report clearfix\">";
 echo "<h4>" . elgg_echo('convo_memberlevels:monthly:stats') . "</h4>";
 echo "<div class=\"convo_memberlevels_piewrapper\">";
 echo elgg_echo('convo_memberlevels:login:frequency') . "<br>";
@@ -137,19 +154,19 @@ echo elgg_echo('convo_memberlevels:avg:convo:rating') . "<br>";
 echo "<span id=\"convo_memberlevels_convoscore\">Loading...</span><br>" . " " . $convoscore . "/5";
 echo "</div>";
 
-if($memberscore > 0){
-  echo "<h4>" . sprintf(elgg_echo('convo_memberlevels:membership:level'), $level) . "</h4>";
+if ($memberscore > 0) {
+  echo "<h4>" . elgg_echo('convo_memberlevels:membership:level', array($level)) . "</h4>";
 }
 
 echo "<div style=\"text-align: center;\">";
 
-if($memberscore > 0){
+if ($memberscore > 0) {
   echo "<span id=\"convo_memberlevels_memberscore\">Loading...</span>" . " " . $memberpercent . "% =" . " " . $medal;
 }
 
 echo "</div>";
 
-if($memberscore > 0){
+if ($memberscore > 0) {
   // only show ranking if they've logged in at least once
   echo "<div class=\"convo_memberlevels_legend\">";
   echo "<div class=\"convo_memberlevels_legendblock\" style=\"background-color: $bronze;\"></div>";
@@ -165,14 +182,15 @@ if($memberscore > 0){
   echo "</div>"; // legend
   echo "</div>";//report
 }
-echo "<br style=\"clear: both;\">";
+
 
 } // admin or public
 
 /*
  * Debugging
  */
-if(isadminloggedin()){
+/*
+if (elgg_is_admin_logged_in()) {
   
     $silverlimit = round(($bronzepoint / 20), 2);
     $goldlimit = round(($silverpoint / 20), 2);
@@ -185,6 +203,7 @@ if(isadminloggedin()){
     echo "<br>gold limit = {$goldlimit}";
     echo "<br>platinum limit = {$platinumlimit}";
     echo "<br>elite limit = {$elitelimit}";
-    
- // echo "history = <pre>" . print_r($history,1) . "</pre>";
+  
+	echo "<br>history = <pre>" . print_r($history,1) . "</pre>";
 }
+*/

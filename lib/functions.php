@@ -5,32 +5,31 @@
 //	Calculates the current level score for the current month and saves as metadata
 function convo_memberlevels_calculate_level($user, $month = NULL, $day = NULL, $year = NULL){
 	
-	if(!($user instanceof ElggUser)){
+	if (!elgg_instanceof($user, 'user')) {
 		return;
 	}
 	
-	if(!$month || !is_numeric($month) || $month > 12){
+	if (!$month || !is_numeric($month) || $month > 12) {
 		$month = date("m");
 	}
 	
-	if(!$day || !is_numeric($day) || $day > 31){
+	if (!$day || !is_numeric($day) || $day > 31) {
 		$day = date("j");
 	}
 	
-	if(!$year || !is_numeric($year) || $year > date("Y")){
+	if (!$year || !is_numeric($year) || $year > date("Y")) {
 		$year = date("Y");
 	}
 	
 	elgg_set_ignore_access(TRUE);
-	$context = get_context();
-	set_context('convo_memberlevels_permission');
+	$context = elgg_get_context();
+	elgg_set_context('convo_memberlevels_permission');
 	
 	$loginhistoryfield = 'convo_memberlevels-history-' . $month . '-' . $year; // array of login days
 	$loginbonusfield = 'convo_memberlevels-loginbonus-' . $month . '-' . $year; // numerical bonus 0-1
 	$loginscorefield = 'convo_memberlevels-loginscore-' . $month . '-' . $year; // % of days logged in
 	$convoscorefield = 'convo_memberlevels-convoscore-' . $month . '-' . $year; // avg convo rating 0-5
 	$memberscorefield = 'convo_memberlevels-memberscore-' . $month . '-' . $year; // monthly score, 0-5
-	$calculatedfield = 'convo_memberlevels-calculated-' . $month . '-' . $day . '-' . $year; // flag to find out if this was calculated for this user
 	
 	$nextmonth = ($month == 12) ? 1 : $month + 1;
 	$nextyear = ($nextmonth > 1) ? $year : $year + 1; 
@@ -53,14 +52,19 @@ function convo_memberlevels_calculate_level($user, $month = NULL, $day = NULL, $
 	
 	foreach($wireposts as $wirepost){
 		$avg = $wirepost->getAnnotationsAvg('generic_rate');
-		$num = count_annotations($entity_guid = 0, $entity_type = "object", $entity_subtype = "thewire", $name = "generic_rate", $value = "", $value_type = "", $owner_guid = 0, $timelower = 0, $timeupper = 0);
+		$num = elgg_get_annotations(array(
+			'type' => 'object',
+			'subtype' => 'thewire',
+			'annotation_name' => 'generic_rate',
+			'annotation_calculation' => 'count'
+		));
 		
 		$replytotal += $num;
 		$scoretotal += ($avg * $num);
 	}
 	
 	
-	if(empty($replytotal)){ // prevent division by 0
+	if (empty($replytotal)) { // prevent division by 0
 		$convoscore = 0;	
 	}
 	else{
@@ -75,34 +79,34 @@ function convo_memberlevels_calculate_level($user, $month = NULL, $day = NULL, $
 		$loginhistory = array();
 	}
 	
-	$loginscore = round( (count($loginhistory) / $day), 4 ) * 100; // gives % of days logged in
+	$loginscore = round((count($loginhistory) / $day), 4) * 100; // gives % of days logged in
 	
 	$loginbonus = -2;
 	
-	if($loginscore > 25){
+	if ($loginscore > 25) {
 		$loginbonus += 1;	
 	}
 	
-	if($loginscore >= 50){
+	if ($loginscore >= 50) {
 		$loginbonus += 1.5;
 	}
 	
-	if($loginscore >= 75){
+	if ($loginscore >= 75) {
 		$loginbonus += 0.5;
 	}
 	
 	// token score just for logging in this month
 	$memberscore = $convoscore + $loginbonus;
-	if($memberscore <= 0){
+	if ($memberscore <= 0) {
 		$memberscore = 0.1;
 	}
 	
-	if($memberscore > 5){
+	if ($memberscore > 5) {
 		$memberscore = 5;
 	}
 	
 	// no login history = automatic 0
-	if(count($loginhistory) == 0){
+	if (count($loginhistory) == 0) {
 	  $memberscore = 0;
 	}
 	
@@ -111,69 +115,31 @@ function convo_memberlevels_calculate_level($user, $month = NULL, $day = NULL, $
 	$user->$loginscorefield = $loginscore;
 	$user->$convoscorefield = $convoscore;
 	$user->$memberscorefield = $memberscore;
-	$user->$calculatedfield = 1;
 	
-	// delete yesterdays calculation flag, because we want to keep the db clean
-	
-	$yesterday = time() - (60*60*24);
-	
-	remove_metadata($user->guid, 'convo_memberlevels-calculated-' . date("m", $yesterday) . '-' . date("j", $yesterday) . '-' . date("Y", $yesterday));
+	$user->save();
 	
 	elgg_set_ignore_access(FALSE);
-	set_context($context);
+	elgg_set_context($context);
 }
 
 // this runs hourly, don't want to overload the server
 // so we'll split up the calculations so that the entire userbase is
 // covered in 24 hours, each hour doing 1/24th of the population
+// @TODO - with 1.8 we can do this once a day and use ElggBatch
 function convo_memberlevels_cron($hook, $type, $returnvalue, $params){
-	global $CONFIG;
-	$interval = get_plugin_setting('interval', 'convo_memberlevels');
 	
-	if(!$interval || $interval == 24){
-		$interval = 0;
-	}
-	
-	$interval++;
-	
-	set_plugin_setting('interval', $interval, 'convo_memberlevels');
-	
-	$name_metastring_id = get_metastring_id('convo_memberlevels-calculated-' . date("m") . '-' . date("j") . '-' . date("Y"));
-	
-	$params = array(
+	$options = array(
 		'types' => array('user'),
-		'limit' => 0,
-		'count' => TRUE,
-		'wheres' => array(
-			"NOT EXISTS (
-			SELECT 1 FROM {$CONFIG->dbprefix}metadata md
-			WHERE md.entity_guid = e.guid
-				AND md.name_id = $name_metastring_id)"
-			),
-	);
-
-	$numusers = elgg_get_entities($params);
-	$limit = ceil($numusers / 24);
-
-	$offset = $limit * $interval;
-	
-	$params = array(
-		'types' => array('user'),
-		'limit' => $limit,
-		'offset' => $offset,
-		'wheres' => array(
-			"NOT EXISTS (
-			SELECT 1 FROM {$CONFIG->dbprefix}metadata md
-			WHERE md.entity_guid = e.guid
-				AND md.name_id = $name_metastring_id)"
-			),
+		'limit' => 0
 	);
 	
-	$users = elgg_get_entities($params);
-	
-	foreach($users as $user){
-		convo_memberlevels_calculate_level($user);
-	}
+	// process daily
+	$batch = new ElggBatch('elgg_get_entities', $options, 'convo_memberlevels_cron_batch', 25);
+}
+
+
+function convo_memberlevels_cron_batch($result, $getter, $options) {
+  convo_memberlevels_calculate_level($result);
 }
 
 //
@@ -183,7 +149,7 @@ function convo_memberlevels_cron($hook, $type, $returnvalue, $params){
 //  $user->convo_memberlevels-MM-YYYY
 // 	The history is recorded as an array of days logged in, array('1' => 1, '14' => 1) means logged in
 // 	on the first and 14th of the month 
-function convo_memberlevels_login($event, $object_type, $object){
+function convo_memberlevels_login($event, $object_type, $object) {
 	$user = $object;
 
 	convo_memberlevels_record_online($user);
@@ -191,42 +157,45 @@ function convo_memberlevels_login($event, $object_type, $object){
 }
 
 
-function convo_memberlevels_rated($event, $object_type, $object){
+function convo_memberlevels_rated($event, $object_type, $object) {
 	$wirepost = get_entity($object->entity_guid);
 	
-	if($object->name == 'generic_rate' && $wirepost->getSubtype() == 'thewire'){
+	if ($object->name == 'generic_rate' && $wirepost->getSubtype() == 'thewire') {
 		$user = get_user($wirepost->owner_guid);
 		
-		if($user){
+		if ($user) {
 			convo_memberlevels_calculate_level($user);
 		}
 	}
 }
 
 
-function convo_memberlevels_permission_check($hook_name, $entity_type, $return_value, $parameters){
-	if(get_context() == "convo_memberlevels_permission"){
+function convo_memberlevels_permission_check($hook_name, $entity_type, $return_value, $parameters) {
+	if (elgg_get_context() == "convo_memberlevels_permission") {
 		return TRUE;
 	}
 	return NULL;
 }
 
 
-function convo_memberlevels_record_online($user){
+function convo_memberlevels_record_online($user) {
 	$day = date("j");
 	$field = 'convo_memberlevels-history-' . date("m") . '-' . date("Y");
 	$history = unserialize($user->$field);
 	
-	if(!is_array($history)){
+	if (!is_array($history)) {
 		$history = array();
 	}
 	
 	$history[$day] = 1;
 	$user->$field = serialize($history);
+	$user->save();
 }
 
-
-function convo_memberlevels_search_join($hook_name, $entity_type, $return_value, $parameters){
+/*
+ *	  SEARCH DISABLED IN 1.8
+ * 
+function convo_memberlevels_search_join($hook_name, $entity_type, $return_value, $parameters) {
   global $CONFIG;
   
   $levelfilter = get_input('convo_memberlevels');
@@ -289,16 +258,4 @@ function convo_memberlevels_search_where($hook_name, $entity_type, $return_value
     return $return_value;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
+*/
